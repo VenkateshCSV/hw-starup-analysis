@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Star-up Behaviour Analysis — Hitwicket Superstars</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.08);
+    --border-strong: rgba(0,0,0,0.14);
+    --text-primary: #1a1a1a;
+    --text-secondary: #5a5a5a;
+    --text-tertiary: #9a9a9a;
+    --teal: #1D9E75;
+    --teal-light: #E1F5EE;
+    --blue: #378ADD;
+    --amber: #EF9F27;
+    --pink: #D4537E;
+    --purple: #534AB7;
+    --gray: #888780;
+    --red: #E24B4A;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+    padding: 0;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 0.5px solid var(--border-strong);
+    padding: 2rem 3rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  header h1 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  header .meta {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .hero {
+    background: var(--surface);
+    border-bottom: 0.5px solid var(--border);
+    padding: 3rem 3rem 2.5rem;
+  }
+
+  .hero-title {
+    font-size: 36px;
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+    margin-bottom: .5rem;
+    line-height: 1.2;
+  }
+
+  .hero-title strong { font-weight: 600; }
+
+  .hero-sub {
+    font-size: 14px;
+    color: var(--text-secondary);
+    max-width: 560px;
+    margin-bottom: 2rem;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .summary-card {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+  }
+
+  .summary-card .val {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+  }
+
+  .summary-card .lbl {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .summary-card .sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .accent { color: var(--teal); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 3rem 4rem;
+  }
+
+  .section {
+    margin-bottom: 3rem;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 1.25rem;
+    padding-bottom: .75rem;
+    border-bottom: 0.5px solid var(--border-strong);
+  }
+
+  .section-num {
+    font-size: 11px;
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-tertiary);
+    letter-spacing: .08em;
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    letter-spacing: .01em;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .leg-sq {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .insight {
+    background: #f0faf6;
+    border-left: 3px solid var(--teal);
+    border-radius: 0;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-top: 1rem;
+  }
+
+  .insight b { color: var(--text-primary); font-weight: 500; }
+
+  .metric-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+
+  .metric {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+  }
+
+  .metric .m-val {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+
+  .metric .m-lbl {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+  }
+
+  .metric .m-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .cluster-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 1rem;
+  }
+
+  .cluster {
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .cluster-title {
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .cluster-body { color: var(--text-secondary); }
+
+  .cl-green { background: #f0faf6; border-top: 2px solid var(--teal); }
+  .cl-amber { background: #fdf6e8; border-top: 2px solid var(--amber); }
+  .cl-red   { background: #fef2f2; border-top: 2px solid var(--red); }
+
+  .cl-green .cluster-title { color: #0F6E56; }
+  .cl-amber .cluster-title { color: #854F0B; }
+  .cl-red   .cluster-title { color: #A32D2D; }
+
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-family: 'DM Mono', monospace;
+    border-top: 0.5px solid var(--border);
+  }
+
+  @media (max-width: 768px) {
+    header { padding: 1rem 1.25rem; }
+    .hero { padding: 1.5rem 1.25rem; }
+    .hero-title { font-size: 24px; }
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+    main { padding: 1.5rem 1.25rem 3rem; }
+    .two-col, .three-col, .metric-row { grid-template-columns: 1fr; }
+    .cluster-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Hitwicket Superstars — Star-up Behaviour Analysis</h1>
+  <div class="meta">Dec '25 install cohort · D110–D130 retained · May 1–18 skip data</div>
+</header>
+
+<div class="hero">
+  <h2 class="hero-title">How players <strong>star up</strong>,<br>skip timers, and play</h2>
+  <p class="hero-sub">A full analysis of star-up progression pace, HC skip behaviour, and the engagement impact of queuing players — across all monetisation segments.</p>
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="val">4.2<span style="font-size:18px;font-weight:400">M</span></div>
+      <div class="lbl">HC spent on skips</div>
+      <div class="sub">May 1–18, all types</div>
+    </div>
+    <div class="summary-card">
+      <div class="val accent">4×</div>
+      <div class="lbl">VIP vs Free star-ups</div>
+      <div class="sub">35 vs 9 at D120</div>
+    </div>
+    <div class="summary-card">
+      <div class="val">-11.6<span style="font-size:18px;font-weight:400">%</span></div>
+      <div class="lbl">WC 3→4 engagement dip</div>
+      <div class="sub">during queue vs pre</div>
+    </div>
+    <div class="summary-card">
+      <div class="val">SUT</div>
+      <div class="lbl">Real progression bottleneck</div>
+      <div class="sub">not the timer</div>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- SECTION 1 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">Star-up progression pace</span>
+    </div>
+
+    <div class="metric-row">
+      <div class="metric"><div class="m-lbl">VIP at D120</div><div class="m-val">35</div><div class="m-sub">total star-ups</div></div>
+      <div class="metric"><div class="m-lbl">Free at D120</div><div class="m-val">9</div><div class="m-sub">total star-ups</div></div>
+      <div class="metric"><div class="m-lbl">Reliable ceiling</div><div class="m-val">~6</div><div class="m-sub">all paid segments</div></div>
+      <div class="metric"><div class="m-lbl">WC divergence</div><div class="m-val">D60+</div><div class="m-sub">where segments split</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Cumulative avg star-ups per user — D0 to D120</div>
+        <div class="legend">
+          <span><span class="leg-sq" style="background:#888780"></span>Free</span>
+          <span><span class="leg-sq" style="background:#378ADD"></span>Sub Dollar</span>
+          <span><span class="leg-sq" style="background:#1D9E75"></span>Sub 50$</span>
+          <span><span class="leg-sq" style="background:#EF9F27"></span>Early VIP</span>
+          <span><span class="leg-sq" style="background:#D4537E"></span>VIP</span>
+        </div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="c1" role="img" aria-label="Line chart of cumulative star-ups per segment from D0 to D120">Cumulative star-ups: Free 9, VIP 35 at D120.</canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Star-up type breakdown at D120 — avg per user</div>
+        <div class="legend">
+          <span><span class="leg-sq" style="background:#888780"></span>Reliable 1→2</span>
+          <span><span class="leg-sq" style="background:#378ADD"></span>Brilliant 1→2</span>
+          <span><span class="leg-sq" style="background:#1D9E75"></span>Brilliant 2→3</span>
+          <span><span class="leg-sq" style="background:#EF9F27"></span>WC 1→2</span>
+          <span><span class="leg-sq" style="background:#D4537E"></span>WC 2→3</span>
+          <span><span class="leg-sq" style="background:#534AB7"></span>WC 3→4</span>
+        </div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="c2" role="img" aria-label="Stacked bar of star-up type breakdown per segment at D120">Type breakdown by segment.</canvas>
+        </div>
+      </div>
+    </div>
+    <div class="insight">
+      <b>Reliable caps at ~6 across all paid tiers</b> — natural ceiling on how many Reliable players exist in a roster. <b>WC is the real monetisation slope</b> — Free averages 1 WC star-up, VIP averages 16. The divergence is visible from D60 onward and is driven almost entirely by WC, not Reliable or Brilliant. Early VIP sits close to VIP on Brilliant pace but significantly behind on WC, suggesting card/shard constraints rather than spend constraints.
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">HC skip behaviour</span>
+    </div>
+
+    <div class="metric-row">
+      <div class="metric"><div class="m-lbl">Total HC from skips</div><div class="m-val">4.2M</div><div class="m-sub">May 1–18</div></div>
+      <div class="metric"><div class="m-lbl">Largest HC sink</div><div class="m-val">WC 3→4</div><div class="m-sub">742k HC · 1,823 skips</div></div>
+      <div class="metric"><div class="m-lbl">Reliable median skip</div><div class="m-val">100%</div><div class="m-sub">of timer skipped</div></div>
+      <div class="metric"><div class="m-lbl">Brilliant 1→2 median</div><div class="m-val">7%</div><div class="m-sub">of timer skipped</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Skip rate by star-up type</div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="c3" role="img" aria-label="Bar chart of skip rates by star-up type">Skip rates from 12% to 31%.</canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">HC spent per skip — distribution</div>
+        <div class="legend">
+          <span><span class="leg-sq" style="background:#378ADD"></span>Median (q50)</span>
+          <span><span class="leg-sq" style="background:#EF9F27"></span>q75</span>
+          <span><span class="leg-sq" style="background:#888780"></span>q90</span>
+        </div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="c4" role="img" aria-label="Grouped bar of HC spent per skip by type">HC spend distribution per skip type.</canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">When do they skip? — % of timer elapsed before skipping</div>
+      <div class="legend">
+        <span><span class="leg-sq" style="background:#378ADD"></span>Mean</span>
+        <span><span class="leg-sq" style="background:#1D9E75"></span>Median</span>
+        <span><span class="leg-sq" style="background:#EF9F27"></span>q75</span>
+        <span><span class="leg-sq" style="background:#888780"></span>q90</span>
+      </div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="c5" role="img" aria-label="Grouped bar of when players skip relative to timer">Reliable skipped instantly; Brilliant near end; WC 2-3 and 3-4 mid-timer.</canvas>
+      </div>
+      <div class="insight">
+        <b>Two distinct skip behaviours emerge:</b><br>
+        — <b>Reliable (6hr):</b> Median skip at 100% of timer — players skip the entire thing from the start. Treated as an instant action, not a timed wait. Tight HC distribution (q25–q75 = 48–72 HC) confirms everyone's paying the same flat cost.<br>
+        — <b>Brilliant & WC 1→2 (24–72hr):</b> Median at 5–7% of timer — almost all the waiting is done, HC cost is minimal. A patience-completion nudge, not a skip.<br>
+        — <b>WC 2→3 & 3→4 (120–180hr):</b> Median at 25–40%, patience breaks noticeably earlier. q90 hits 100% for both — bimodal group: some wait till the end, others give up mid-way. These are your highest HC-per-skip events (median 144–281 HC).
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Gap to next star-up initiation — skipped vs waited (median hrs)</div>
+      <div class="legend">
+        <span><span class="leg-sq" style="background:#378ADD"></span>Waited</span>
+        <span><span class="leg-sq" style="background:#1D9E75"></span>Skipped</span>
+      </div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="c6" role="img" aria-label="Grouped bar comparing gap to next starup between skipped and waited groups">Gap to next star-up is similar for skipped and waited groups.</canvas>
+      </div>
+      <div class="insight">
+        <b>Skipping doesn't meaningfully accelerate the next star-up.</b> The gap between completing a star-up and starting the next one is nearly identical for skippers and waiters across all types. For WC 3→4, skippers actually wait slightly longer (82hr vs 74hr). The bottleneck post star-up is <b>SUT balance and player availability</b> — not the timer. This rules out timer reduction as a progression unlocker.
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">Engagement impact during queue</span>
+    </div>
+
+    <div class="metric-row">
+      <div class="metric"><div class="m-lbl">WC 3→4 dip</div><div class="m-val">-11.6%</div><div class="m-sub">8.7 → 7.7 matches/day</div></div>
+      <div class="metric"><div class="m-lbl">Matches lost</div><div class="m-val">~1/day</div><div class="m-sub">for up to 7.5 days</div></div>
+      <div class="metric"><div class="m-lbl">Reliable change</div><div class="m-val">+3%</div><div class="m-sub">no lineup impact felt</div></div>
+      <div class="metric"><div class="m-lbl">WC 2→3 dip</div><div class="m-val">-8.7%</div><div class="m-sub">second largest drop</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Avg daily PvP matches — pre baseline vs during queue (3-day window)</div>
+      <div class="legend">
+        <span><span class="leg-sq" style="background:#378ADD"></span>Pre (baseline)</span>
+        <span><span class="leg-sq" style="background:#1D9E75"></span>During queue</span>
+      </div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="c7" role="img" aria-label="Grouped bar comparing pre and during match counts per day">WC types show clear engagement dip; Reliable and Brilliant flat or up.</canvas>
+      </div>
+      <div class="insight">
+        <b>Engagement cost scales monotonically with WC tier.</b> Reliable and Brilliant users play the same or slightly more during queue — the timer is too short to affect lineup and these users are in their naturally high-activity early journey. WC 1→2 through WC 3→4 show a clean, escalating dip: -4.5%, -8.7%, -11.6%. WC 3→4 users are your most active (8.7 matches/day pre) and drop by ~1 match/day for up to 7.5 days — the only tier where there's a genuine engagement-based argument for timer reduction.
+      </div>
+    </div>
+
+    <div class="cluster-grid">
+      <div class="cluster cl-green">
+        <div class="cluster-title">Reliable & Brilliant 1→2 — no cost</div>
+        <div class="cluster-body">Timer too short to feel. Star-up initiation is part of an active session. Bench depth covers absence easily. During engagement up slightly — session effect, not star-up effect.</div>
+      </div>
+      <div class="cluster cl-amber">
+        <div class="cluster-title">Brilliant 2→3 & WC 1→2 — mild</div>
+        <div class="cluster-body">Inflection point. Player begins to matter to the lineup but bench can still cover. Dip is real (-1.8% to -4.5%) but small enough that it's not a priority concern.</div>
+      </div>
+      <div class="cluster cl-red">
+        <div class="cluster-title">WC 2→3 & WC 3→4 — meaningful</div>
+        <div class="cluster-body">These players are irreplaceable in the active lineup. Long timers (5–7.5 days) compound the absence. Engagement dip is sustained and scales with rarity. Only tier where a system change is justified on engagement grounds.</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>Hitwicket Superstars · Star-up Behaviour Analysis · Dec '25 cohort · Generated May 2026</footer>
+
+<script>
+const gridColor = 'rgba(0,0,0,0.06)';
+const noLegend = { legend:{ display:false } };
+const cohorts = ['D0','D1','D2','D3','D4','D5','D6','D7','D8-14','D15-21','D22-30','D31-40','D41-50','D51-60','D61-70','D71-80','D81-90','D91-100','D101-110','D111-120'];
+const stypes = ['Reliable 1→2','Brilliant 1→2','Brilliant 2→3','WC 1→2','WC 2→3','WC 3→4'];
+
+new Chart(document.getElementById('c1'),{
+  type:'line',
+  data:{ labels:cohorts, datasets:[
+    {label:'Free',      data:[0,0,0,0,0,0,1,1,2,2,4,4,6,6,6,7,7,8,8,9],  borderColor:'#888780',pointRadius:2,borderWidth:2,backgroundColor:'transparent'},
+    {label:'Sub Dollar',data:[0,0,0,0,0,0,1,2,4,5,7,8,10,11,12,12,13,14,14,14],borderColor:'#378ADD',pointRadius:2,borderWidth:2,backgroundColor:'transparent'},
+    {label:'Sub 50$',   data:[0,0,0,1,1,1,1,1,4,5,7,8,9,11,11,13,13,15,15,18],borderColor:'#1D9E75',pointRadius:2,borderWidth:2,backgroundColor:'transparent'},
+    {label:'Early VIP', data:[0,0,1,1,1,1,2,2,5,7,9,12,13,15,17,18,19,21,22,23],borderColor:'#EF9F27',pointRadius:2,borderWidth:2,backgroundColor:'transparent'},
+    {label:'VIP',       data:[0,0,1,1,1,1,2,3,7,8,11,16,20,22,25,26,29,31,33,35],borderColor:'#D4537E',pointRadius:2,borderWidth:2,backgroundColor:'transparent'}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:noLegend,scales:{
+    x:{ticks:{font:{size:10},maxRotation:45,autoSkip:false},grid:{color:gridColor}},
+    y:{title:{display:true,text:'Avg cumulative star-ups',font:{size:11}},grid:{color:gridColor}}
+  }}
+});
+
+new Chart(document.getElementById('c2'),{
+  type:'bar',
+  data:{labels:['Free','Sub Dollar','Sub 50$','Early VIP','VIP'],datasets:[
+    {label:'Reliable 1→2',data:[5,6,6,6,6],backgroundColor:'#888780'},
+    {label:'Brilliant 1→2',data:[3,5,6,7,9],backgroundColor:'#378ADD'},
+    {label:'Brilliant 2→3',data:[1,1,2,3,4],backgroundColor:'#1D9E75'},
+    {label:'WC 1→2',data:[0,1,2,5,8],backgroundColor:'#EF9F27'},
+    {label:'WC 2→3',data:[0,0,0,1,4],backgroundColor:'#D4537E'},
+    {label:'WC 3→4',data:[0,0,0,0,2],backgroundColor:'#534AB7'}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:noLegend,scales:{
+    x:{stacked:true,grid:{display:false}},
+    y:{stacked:true,title:{display:true,text:'Avg star-ups at D120',font:{size:11}},grid:{color:gridColor}}
+  }}
+});
+
+new Chart(document.getElementById('c3'),{
+  type:'bar',
+  data:{labels:stypes,datasets:[{label:'Skip %',data:[15.5,12.1,17.9,17.7,25.1,31.3],backgroundColor:['#888780','#378ADD','#1D9E75','#EF9F27','#D4537E','#534AB7']}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:noLegend,scales:{
+    x:{ticks:{font:{size:11}},grid:{display:false}},
+    y:{max:40,grid:{color:gridColor},ticks:{callback:v=>v+'%'},title:{display:true,text:'Skip rate',font:{size:11}}}
+  }}
+});
+
+new Chart(document.getElementById('c4'),{
+  type:'bar',
+  data:{labels:stypes,datasets:[
+    {label:'Median HC',data:[72,27,34,56,144,281],backgroundColor:'#378ADD'},
+    {label:'q75 HC',   data:[72,62,109,281,574,784],backgroundColor:'#EF9F27'},
+    {label:'q90 HC',   data:[72,180,357,506,753,999],backgroundColor:'#888780'}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:noLegend,scales:{
+    x:{ticks:{font:{size:11}},grid:{display:false}},
+    y:{title:{display:true,text:'HC spent per skip',font:{size:11}},grid:{color:gridColor}}
+  }}
+});
+
+new Chart(document.getElementById('c5'),{
+  type:'bar',
+  data:{labels:stypes,datasets:[
+    {label:'Mean',  data:[79,20,21,29,40,49],backgroundColor:'#378ADD'},
+    {label:'Median',data:[100,7,5,7,25,40], backgroundColor:'#1D9E75'},
+    {label:'q75',   data:[100,22,23,49,87,100],backgroundColor:'#EF9F27'},
+    {label:'q90',   data:[100,74,98,100,100,100],backgroundColor:'#888780'}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:noLegend,scales:{
+    x:{ticks:{font:{size:11}},grid:{display:false}},
+    y:{max:115,grid:{color:gridColor},ticks:{callback:v=>v+'%'},title:{display:true,text:'% of timer elapsed at skip',font:{size:11}}}
+  }}
+});
+
+new Chart(document.getElementById('c6'),{
+  type:'bar',
+  data:{labels:stypes,datasets:[
+    {label:'Waited', data:[25,47,62,74,93,74],backgroundColor:'#378ADD'},
+    {label:'Skipped',data:[17,41,62,67,73,82],backgroundColor:'#1D9E75'}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:noLegend,scales:{
+    x:{ticks:{font:{size:11}},grid:{display:false}},
+    y:{title:{display:true,text:'Median hrs to next star-up',font:{size:11}},grid:{color:gridColor}}
+  }}
+});
+
+new Chart(document.getElementById('c7'),{
+  type:'bar',
+  data:{labels:stypes,datasets:[
+    {label:'Pre',   data:[7.3,6.5,7.1,7.5,8.3,8.7],backgroundColor:'#378ADD'},
+    {label:'During',data:[7.5,7.0,7.0,7.2,7.6,7.7],backgroundColor:'#1D9E75'}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:noLegend,scales:{
+    x:{ticks:{font:{size:11}},grid:{display:false}},
+    y:{min:5,max:10,grid:{color:gridColor},title:{display:true,text:'Avg matches/day',font:{size:11}}}
+  }}
+});
+</script>
+</body>
+</html>
