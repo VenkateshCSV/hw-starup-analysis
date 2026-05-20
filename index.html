@@ -373,12 +373,12 @@
       <div class="card">
         <div class="card-title">Star-up type breakdown at D120 — avg per user</div>
         <div class="legend">
-          <span><span class="leg-sq" style="background:#888780"></span>Reliable 1→2</span>
-          <span><span class="leg-sq" style="background:#378ADD"></span>Brilliant 1→2</span>
-          <span><span class="leg-sq" style="background:#1D9E75"></span>Brilliant 2→3</span>
-          <span><span class="leg-sq" style="background:#EF9F27"></span>WC 1→2</span>
+          <span><span class="leg-sq" style="background:#5DCAA5"></span>Reliable 1→2</span>
+          <span><span class="leg-sq" style="background:#85B7EB"></span>Brilliant 1→2</span>
+          <span><span class="leg-sq" style="background:#378ADD"></span>Brilliant 2→3</span>
+          <span><span class="leg-sq" style="background:#ED93B1"></span>WC 1→2</span>
           <span><span class="leg-sq" style="background:#D4537E"></span>WC 2→3</span>
-          <span><span class="leg-sq" style="background:#534AB7"></span>WC 3→4</span>
+          <span><span class="leg-sq" style="background:#993556"></span>WC 3→4</span>
         </div>
         <div class="chart-wrap" style="height:260px">
           <canvas id="c2" role="img" aria-label="Stacked bar of star-up type breakdown per segment at D120">Type breakdown by segment.</canvas>
@@ -502,6 +502,40 @@
     </div>
   </div>
 
+
+  <!-- SECTION 4 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">Star-up progression by age — interactive</span>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="font-size:13px;color:var(--text-secondary);font-weight:500">Select segment</div>
+        <div id="seg-buttons" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="prog-title">Cumulative avg star-ups by type — Free users</div>
+      <div class="legend" id="prog-legend">
+        <span><span class="leg-sq" style="background:#5DCAA5"></span>Reliable 1→2</span>
+        <span><span class="leg-sq" style="background:#85B7EB"></span>Brilliant 1→2</span>
+        <span><span class="leg-sq" style="background:#378ADD"></span>Brilliant 2→3</span>
+        <span><span class="leg-sq" style="background:#ED93B1"></span>WC 1→2</span>
+        <span><span class="leg-sq" style="background:#D4537E"></span>WC 2→3</span>
+        <span><span class="leg-sq" style="background:#993556"></span>WC 3→4</span>
+      </div>
+      <div class="chart-wrap" style="height:320px">
+        <canvas id="c-prog" role="img" aria-label="Line chart of star-up type progression by cohort age for selected segment">Star-up progression by type over time.</canvas>
+      </div>
+      <div id="prog-insight" style="margin-top:1rem"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:1rem" id="prog-metrics"></div>
+  </div>
+
 </main>
 
 <footer>Hitwicket Superstars · Star-up Behaviour Analysis · Dec '25 cohort · Generated May 2026</footer>
@@ -509,7 +543,9 @@
 <script>
 const gridColor = 'rgba(0,0,0,0.06)';
 const noLegend = { legend:{ display:false } };
+
 const cohorts = ['D0','D1','D2','D3','D4','D5','D6','D7','D8-14','D15-21','D22-30','D31-40','D41-50','D51-60','D61-70','D71-80','D81-90','D91-100','D101-110','D111-120'];
+
 const stypes = ['Reliable 1→2','Brilliant 1→2','Brilliant 2→3','WC 1→2','WC 2→3','WC 3→4'];
 
 new Chart(document.getElementById('c1'),{
@@ -530,12 +566,12 @@ new Chart(document.getElementById('c1'),{
 new Chart(document.getElementById('c2'),{
   type:'bar',
   data:{labels:['Free','Sub Dollar','Sub 50$','Early VIP','VIP'],datasets:[
-    {label:'Reliable 1→2',data:[5,6,6,6,6],backgroundColor:'#888780'},
-    {label:'Brilliant 1→2',data:[3,5,6,7,9],backgroundColor:'#378ADD'},
-    {label:'Brilliant 2→3',data:[1,1,2,3,4],backgroundColor:'#1D9E75'},
-    {label:'WC 1→2',data:[0,1,2,5,8],backgroundColor:'#EF9F27'},
+    {label:'Reliable 1→2',data:[5,6,6,6,6],backgroundColor:'#5DCAA5'},
+    {label:'Brilliant 1→2',data:[3,5,6,7,9],backgroundColor:'#85B7EB'},
+    {label:'Brilliant 2→3',data:[1,1,2,3,4],backgroundColor:'#378ADD'},
+    {label:'WC 1→2',data:[0,1,2,5,8],backgroundColor:'#ED93B1'},
     {label:'WC 2→3',data:[0,0,0,1,4],backgroundColor:'#D4537E'},
-    {label:'WC 3→4',data:[0,0,0,0,2],backgroundColor:'#534AB7'}
+    {label:'WC 3→4',data:[0,0,0,0,2],backgroundColor:'#993556'}
   ]},
   options:{responsive:true,maintainAspectRatio:false,plugins:noLegend,scales:{
     x:{stacked:true,grid:{display:false}},
@@ -545,7 +581,7 @@ new Chart(document.getElementById('c2'),{
 
 new Chart(document.getElementById('c3'),{
   type:'bar',
-  data:{labels:stypes,datasets:[{label:'Skip %',data:[15.5,12.1,17.9,17.7,25.1,31.3],backgroundColor:['#888780','#378ADD','#1D9E75','#EF9F27','#D4537E','#534AB7']}]},
+  data:{labels:stypes,datasets:[{label:'Skip %',data:[15.5,12.1,17.9,17.7,25.1,31.3],backgroundColor:['#5DCAA5','#85B7EB','#378ADD','#ED93B1','#D4537E','#993556']}]},
   options:{responsive:true,maintainAspectRatio:false,plugins:noLegend,scales:{
     x:{ticks:{font:{size:11}},grid:{display:false}},
     y:{max:40,grid:{color:gridColor},ticks:{callback:v=>v+'%'},title:{display:true,text:'Skip rate',font:{size:11}}}
@@ -602,6 +638,159 @@ new Chart(document.getElementById('c7'),{
     y:{min:5,max:10,grid:{color:gridColor},title:{display:true,text:'Avg matches/day',font:{size:11}}}
   }}
 });
+
+const segData = {
+  'Free': {
+    n: 5917,
+    r12:  [0,0,0,0,0,0,0,1,1,2,2,2,3,3,3,3,4,4,4,5],
+    b12:  [0,0,0,0,0,0,0,0,1,1,1,2,2,2,3,3,3,3,3,3],
+    b23:  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+    wc12: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    wc23: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    wc34: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    insight: 'Free users progress steadily through Reliable and begin Brilliant by D8–14, but WC star-ups are essentially absent by D120. Progression is SUT-constrained and driven entirely by free reward sources.'
+  },
+  'Sub Dollar': {
+    n: 1430,
+    r12:  [0,0,0,0,0,1,1,1,2,3,4,4,5,5,5,5,5,6,6,6],
+    b12:  [0,0,0,0,0,0,0,0,1,1,2,2,3,3,4,4,4,4,5,5],
+    b23:  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    wc12: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    wc23: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    wc34: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    insight: 'Sub Dollar users move faster than Free on Reliable and Brilliant, crossing into Brilliant 1→2 by D8–14 and Brilliant 2→3 by late journey. WC barely appears — this tier has spend intent but limited WC player acquisition.'
+  },
+  'Sub 50$': {
+    n: 1029,
+    r12:  [0,0,0,0,1,1,1,1,2,3,4,5,5,5,5,6,6,6,6,6],
+    b12:  [0,0,0,0,0,0,0,0,1,1,2,3,3,4,5,5,5,5,6,6],
+    b23:  [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,2,2],
+    wc12: [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,2,2,2],
+    wc23: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    wc34: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    insight: 'Sub 50$ users are where WC star-ups begin to appear meaningfully — WC 1→2 kicks in around D51–60. Reliable caps earlier and Brilliant accelerates through the mid journey. WC 2→3 remains out of reach by D120.'
+  },
+  'Early VIP': {
+    n: 135,
+    r12:  [0,0,0,1,1,1,1,2,3,4,5,5,5,5,5,6,6,6,6,6],
+    b12:  [0,0,0,0,0,0,0,0,1,2,3,4,5,6,6,7,7,7,7,7],
+    b23:  [0,0,0,0,0,0,0,0,0,0,0,1,1,1,2,2,2,2,3,3],
+    wc12: [0,0,0,0,0,0,0,0,0,0,0,1,1,2,2,3,4,4,5,5],
+    wc23: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1],
+    wc34: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    insight: 'Early VIP progression is notably fast on Brilliant — nearly matching VIP — but WC star-ups plateau at WC 1→2 by D120 with only 1 WC 2→3. The gap vs VIP is almost entirely in WC, pointing to card/shard availability as the constraint rather than HC or SUT.'
+  },
+  'VIP': {
+    n: 147,
+    r12:  [0,0,0,1,1,1,1,2,3,4,5,5,5,5,5,5,6,6,6,6],
+    b12:  [0,0,0,0,0,0,0,1,2,3,4,5,6,7,7,8,8,9,9,9],
+    b23:  [0,0,0,0,0,0,0,0,1,1,1,2,3,3,4,4,4,5,5,4],
+    wc12: [0,0,0,0,0,0,0,0,1,1,2,3,4,5,6,6,7,7,8,8],
+    wc23: [0,0,0,0,0,0,0,0,0,0,0,1,1,2,3,3,4,4,4,4],
+    wc34: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,2,2],
+    insight: 'VIP users push into WC 3→4 by D71–80 — the only segment to reach this tier within D120. Brilliant 1→2 reaches 9 and WC 1→2 reaches 8. The spread across all 6 star-up types is unique to this segment and reflects both deeper rosters and higher SUT/HC investment.'
+  }
+};
+
+const typeColors = ['#5DCAA5','#85B7EB','#378ADD','#ED93B1','#D4537E','#993556'];
+const typeKeys   = ['r12','b12','b23','wc12','wc23','wc34'];
+const typeLabels = ['Reliable 1→2','Brilliant 1→2','Brilliant 2→3','WC 1→2','WC 2→3','WC 3→4'];
+const segNames   = ['Free','Sub Dollar','Sub 50$','Early VIP','VIP'];
+const segColors  = {'Free':'#888780','Sub Dollar':'#378ADD','Sub 50$':'#1D9E75','Early VIP':'#EF9F27','VIP':'#D4537E'};
+
+let progChart = null;
+let activeSeg = 'Free';
+
+function buildSegButtons() {
+  const container = document.getElementById('seg-buttons');
+  segNames.forEach(seg => {
+    const btn = document.createElement('button');
+    btn.textContent = seg;
+    btn.dataset.seg = seg;
+    btn.style.cssText = `padding:6px 14px;border-radius:20px;border:1px solid ${segColors[seg]};font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:all .15s;background:transparent;color:${segColors[seg]}`;
+    btn.addEventListener('click', () => selectSeg(seg));
+    container.appendChild(btn);
+  });
+  updateButtonStyles();
+}
+
+function updateButtonStyles() {
+  document.querySelectorAll('#seg-buttons button').forEach(btn => {
+    const seg = btn.dataset.seg;
+    const col = segColors[seg];
+    if (seg === activeSeg) {
+      btn.style.background = col;
+      btn.style.color = '#fff';
+      btn.style.borderColor = col;
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = col;
+      btn.style.borderColor = col;
+    }
+  });
+}
+
+function selectSeg(seg) {
+  activeSeg = seg;
+  updateButtonStyles();
+  updateProgChart();
+}
+
+function updateProgChart() {
+  const data = segData[activeSeg];
+  document.getElementById('prog-title').textContent = `Cumulative avg star-ups by type — ${activeSeg} users (n=${data.n.toLocaleString()})`;
+
+  const datasets = typeKeys.map((key, i) => ({
+    label: typeLabels[i],
+    data: data[key],
+    borderColor: typeColors[i],
+    backgroundColor: 'transparent',
+    pointRadius: 3,
+    borderWidth: 2,
+    tension: 0.3
+  }));
+
+  if (progChart) {
+    progChart.data.datasets = datasets;
+    progChart.update();
+  } else {
+    progChart = new Chart(document.getElementById('c-prog'), {
+      type: 'line',
+      data: { labels: cohorts, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { size: 10 }, maxRotation: 45, autoSkip: false }, grid: { color: gridColor } },
+          y: { title: { display: true, text: 'Avg cumulative star-ups', font: { size: 11 } }, grid: { color: gridColor }, min: 0 }
+        }
+      }
+    });
+  }
+
+  const insightEl = document.getElementById('prog-insight');
+  insightEl.innerHTML = `<div style="background:#f0faf6;border-left:3px solid #1D9E75;padding:12px 16px;font-size:13px;color:#5a5a5a;line-height:1.7">${data.insight}</div>`;
+
+  const d120 = {
+    r12: data.r12[19], b12: data.b12[19], b23: data.b23[19],
+    wc12: data.wc12[19], wc23: data.wc23[19], wc34: data.wc34[19]
+  };
+  const total = Object.values(d120).reduce((a,b)=>a+b,0);
+  const wcTotal = d120.wc12 + d120.wc23 + d120.wc34;
+
+  const firstWC = data.wc12.findIndex(v=>v>0);
+  const wcLabel = firstWC === -1 ? 'None by D120' : cohorts[firstWC];
+
+  document.getElementById('prog-metrics').innerHTML = `
+    <div class="metric"><div class="m-lbl">Total star-ups at D120</div><div class="m-val">${total}</div><div class="m-sub">avg per user</div></div>
+    <div class="metric"><div class="m-lbl">WC star-ups at D120</div><div class="m-val">${wcTotal}</div><div class="m-sub">${total > 0 ? Math.round(wcTotal/total*100) : 0}% of total</div></div>
+    <div class="metric"><div class="m-lbl">First WC 1→2</div><div class="m-val" style="font-size:16px">${wcLabel}</div><div class="m-sub">cohort of first avg appearance</div></div>
+  `;
+}
+
+buildSegButtons();
+updateProgChart();
 </script>
 </body>
 </html>
