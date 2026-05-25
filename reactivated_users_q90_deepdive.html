@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q90 Users Deep Dive — April 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.07);
+    --border-strong: rgba(0,0,0,0.13);
+    --text-primary: #1a1a1a;
+    --text-secondary: #5a5a5a;
+    --text-tertiary: #9a9a9a;
+    --teal: #1D9E75;
+    --teal-light: #E1F5EE;
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --blue-mid: #378ADD;
+    --blue-bar: #85B7EB;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --coral: #D85A30;
+    --coral-light: #FAECE7;
+    --green: #3B6D11;
+    --green-light: #EAF3DE;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text-primary); line-height: 1.6; }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface); border-bottom: 0.5px solid var(--border-strong);
+    padding: 1.4rem 3rem; position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+  .brand .dot.q90 { background: var(--coral); }
+  header h1 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
+  .header-right { display: flex; align-items: center; gap: 1.5rem; }
+  .meta { font-size: 11px; color: var(--text-tertiary); font-family: 'DM Mono', monospace; }
+  a.nav-link {
+    font-size: 12px; font-weight: 500; color: var(--text-secondary);
+    text-decoration: none; padding: 5px 14px; border-radius: 6px;
+    border: 0.5px solid var(--border-strong); transition: background 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  a.nav-link:hover { background: var(--bg); }
+  a.data-link {
+    font-size: 12px; font-weight: 500; color: var(--blue);
+    text-decoration: none; border: 0.5px solid var(--blue);
+    padding: 5px 14px; border-radius: 6px; transition: background 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  a.data-link:hover { background: var(--blue-light); }
+  a.data-link svg, a.nav-link svg { width: 13px; height: 13px; }
+
+  /* ── HERO ── */
+  .hero { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 3rem 3rem 2.5rem; }
+  .hero-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); font-family: 'DM Mono', monospace; margin-bottom: 0.6rem; }
+  .hero-title { font-size: 32px; font-weight: 600; letter-spacing: -0.03em; color: var(--text-primary); margin-bottom: 0.5rem; line-height: 1.2; }
+  .hero-desc { font-size: 15px; color: var(--text-secondary); max-width: 680px; line-height: 1.65; margin-bottom: 2rem; }
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kpi-card { background: var(--bg); border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); padding: 1rem 1.1rem; }
+  .kpi-label { font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px; }
+  .kpi-value { font-size: 24px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; }
+  .kpi-note { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+  /* ── DEFINITION BOX ── */
+  .def-box {
+    background: var(--surface); border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius); padding: 1.2rem 1.5rem;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem;
+    margin-bottom: 2.5rem;
+  }
+  .def-item {}
+  .def-label { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); font-family: 'DM Mono', monospace; margin-bottom: 4px; }
+  .def-value { font-size: 13.5px; color: var(--text-primary); font-weight: 500; }
+  .def-note { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* ── SP PILL ── */
+  .sp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+  .sp-pill { border-radius: var(--radius); padding: 1rem 1.2rem; border: 0.5px solid var(--border-strong); }
+  .sp-pill-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+  .sp-pill-name { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .sp-pill-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+  /* ── MAIN ── */
+  main { max-width: 1120px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+  /* ── SECTION ── */
+  .section { margin-bottom: 3.5rem; }
+  .section-header { margin-bottom: 1.5rem; }
+  .section-num { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); font-family: 'DM Mono', monospace; margin-bottom: 0.3rem; }
+  .section-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; color: var(--text-primary); margin-bottom: 0.25rem; }
+  .section-sub { font-size: 14px; color: var(--text-secondary); }
+
+  /* ── CARDS ── */
+  .card { background: var(--surface); border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 1.5rem; }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 1rem; padding-bottom: 8px; border-bottom: 0.5px solid var(--border); }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; }
+
+  /* ── CHART ── */
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* ── LEGEND ── */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); }
+  .leg-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── INSIGHTS ── */
+  .insights { display: flex; flex-direction: column; gap: 10px; }
+  .insight { border-left: 2.5px solid var(--blue-mid); background: #f9fbfe; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 0.7rem 0.9rem; font-size: 13.5px; color: var(--text-primary); line-height: 1.55; }
+  .insight.warn { border-left-color: var(--amber); background: #fffbf4; }
+  .insight.good { border-left-color: var(--teal); background: #f4fbf8; }
+  .insight strong { font-weight: 600; }
+
+  /* ── OFFER TABLE ── */
+  .offer-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .offer-table th { font-size: 11px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 0 10px; text-align: left; border-bottom: 0.5px solid var(--border-strong); }
+  .offer-table td { padding: 9px 0; border-bottom: 0.5px solid var(--border); color: var(--text-primary); vertical-align: middle; }
+  .offer-table tr:last-child td { border-bottom: none; }
+  .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; font-weight: 600; background: var(--bg); color: var(--text-secondary); margin-right: 4px; }
+  .pct-bar-bg { background: var(--bg); border-radius: 3px; height: 5px; width: 90px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
+  .pct-bar { height: 5px; border-radius: 3px; background: var(--blue-mid); }
+  .tag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 500; margin-left: 5px; vertical-align: middle; }
+  .tag-blue { background: var(--blue-light); color: var(--blue); }
+  .tag-green { background: var(--green-light); color: var(--green); }
+  .tag-amber { background: var(--amber-light); color: var(--amber); }
+  .tag-coral { background: var(--coral-light); color: var(--coral); }
+
+  /* ── SP TABLE ── */
+  .sp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .sp-table th { font-size: 11px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 8px 10px 0; text-align: left; border-bottom: 0.5px solid var(--border-strong); }
+  .sp-table td { padding: 9px 8px 9px 0; border-bottom: 0.5px solid var(--border); color: var(--text-primary); vertical-align: middle; font-family: 'DM Mono', monospace; font-size: 12px; }
+  .sp-table tr:last-child td { border-bottom: none; }
+  .sp-table td:first-child { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; }
+  .sp-up { color: var(--teal); font-size: 11px; margin-left: 3px; }
+
+  /* ── FOOTER ── */
+  footer { text-align: center; padding: 2rem; font-size: 12px; color: var(--text-tertiary); border-top: 0.5px solid var(--border-strong); font-family: 'DM Mono', monospace; }
+  footer a { color: var(--blue); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="brand">
+    <div class="dot q90"></div>
+    <h1>Q90 Users — Deep Dive · April 2026</h1>
+  </div>
+  <div class="header-right">
+    <span class="meta">M7+ · MRP ≥ 15 at reactivation</span>
+    <a class="nav-link" href="./reactivated_users_april2026.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Main Report
+    </a>
+    <a class="data-link" href="https://docs.google.com/spreadsheets/d/18pALbCgJaCgWXWRdpgwDfCSfi5IwOa9A5XSNG7zJpHY/edit?usp=sharing" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      Data Sheet
+    </a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <p class="hero-eyebrow">Game Analytics · Q90 Deep Dive</p>
+  <h2 class="hero-title">Q90 Users<br>April 2026</h2>
+  <p class="hero-desc">Reactivated users who are M7+ (account ≥ 7 months old) with MRP ≥ 15 at the time of reactivation. Experienced players who made meaningful progression before churning. Three cuts: overall, split by prior payment history, and prior payers split by previous LTV.</p>
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <p class="kpi-label">Q90 users</p>
+      <p class="kpi-value">8,267</p>
+      <p class="kpi-note">29.5% of reactivated base</p>
+    </div>
+    <div class="kpi-card">
+      <p class="kpi-label">D14 revenue</p>
+      <p class="kpi-value">₹6.6L</p>
+      <p class="kpi-note">52.9% of total D14 revenue</p>
+    </div>
+    <div class="kpi-card">
+      <p class="kpi-label">D14 retention</p>
+      <p class="kpi-value">41.9%</p>
+      <p class="kpi-note">vs ~36% overall weighted avg</p>
+    </div>
+    <div class="kpi-card">
+      <p class="kpi-label">Median MRP</p>
+      <p class="kpi-value">35</p>
+      <p class="kpi-note">Mean 39 · Q90: 65</p>
+    </div>
+  </div>
+</section>
+
+<main>
+
+  <!-- ── SP OFFER DEFINITIONS ── -->
+  <div class="sp-grid" style="margin-top:0;">
+    <div class="sp-pill" style="background:#f9fbfe; border-color: #c5daf5;">
+      <p class="sp-pill-label" style="color:var(--blue);">FTB SP</p>
+      <p class="sp-pill-name">First-Time Buyer SP</p>
+      <p class="sp-pill-desc">Triggered for users who have <strong>never made a purchase</strong>. Entry-level subscription offer for non-payers.</p>
+    </div>
+    <div class="sp-pill" style="background:#fffbf4; border-color: #e8cc9a;">
+      <p class="sp-pill-label" style="color:var(--amber);">Irregular SP</p>
+      <p class="sp-pill-name">Lapsed Payer SP</p>
+      <p class="sp-pill-desc">Triggered for payers who <strong>haven't purchased in 2+ months</strong> and have <strong>lifetime spend &lt; $50</strong>. Re-entry offer for lapsed low-LTV payers.</p>
+    </div>
+    <div class="sp-pill" style="background:#f4fbf8; border-color: #a8d8c0;">
+      <p class="sp-pill-label" style="color:var(--teal);">Regular SP</p>
+      <p class="sp-pill-name">Standard Subscription</p>
+      <p class="sp-pill-desc">For all other users — payers with <strong>lifetime spend ≥ $50</strong>. Full subscription offer, no lapse discount.</p>
+    </div>
+  </div>
+
+  <!-- ── SECTION 1: Q90 OVERALL ── -->
+  <div class="section">
+    <div class="section-header">
+      <p class="section-num">01 — Q90 overall</p>
+      <p class="section-title">Retention, monetization and top offers</p>
+      <p class="section-sub">All 8,267 Q90 users combined before any split.</p>
+    </div>
+
+    <div class="two-col" style="margin-bottom:1.25rem;">
+      <div class="card">
+        <p class="card-title">Retention D0 → D14</p>
+        <div class="chart-wrap" style="height:220px"><canvas id="c_q90ret"></canvas></div>
+      </div>
+      <div class="card">
+        <p class="card-title">Monetization D0 → D14</p>
+        <div class="legend">
+          <span class="leg"><span class="leg-sq" style="background:#85B7EB"></span>Revenue (₹) — left</span>
+          <span class="leg"><span class="leg-sq" style="background:var(--coral)"></span>PUC % — right</span>
+        </div>
+        <div class="chart-wrap" style="height:200px"><canvas id="c_q90mono"></canvas></div>
+      </div>
+    </div>
+
+    <div class="two-col" style="margin-bottom:1.25rem;">
+      <div class="card">
+        <p class="card-title">SP conversion D0 → D14</p>
+        <div class="chart-wrap" style="height:200px"><canvas id="c_q90sp"></canvas></div>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:8px;">SP conv is still accumulating at D14 — curve hasn't flattened. Likely more conversion beyond D14.</p>
+      </div>
+      <div class="card" style="padding:1.2rem 1.4rem;">
+        <p class="card-title">Top 5 converting offers by D14</p>
+        <table class="offer-table">
+          <thead><tr><th>Rank</th><th>Offer</th><th>FTB %</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rank-badge">1</span></td><td>Rent a Player</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:100%"></div></div>33.6%</td></tr>
+            <tr><td><span class="rank-badge">2</span></td><td>Match Replay</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:94%"></div></div>31.5%</td></tr>
+            <tr><td><span class="rank-badge">3</span></td><td>M2+ FTB SP</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:26%"></div></div>8.8%</td></tr>
+            <tr><td><span class="rank-badge">4</span></td><td>M2+ SP</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:21%"></div></div>6.9%</td></tr>
+            <tr><td><span class="rank-badge">5</span></td><td>M2+ Irregular SP Gold</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:12%"></div></div>4.1%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="insights">
+      <div class="insight good"><strong>29.5% of users, 52.9% of revenue.</strong> Q90 is the highest-leverage segment in the entire reactivated pool — significantly above their user share in both revenue and retention.</div>
+      <div class="insight"><strong>Rent a Player and Match Replay are nearly tied (33.6% vs 31.5%)</strong> — the first segment in the dataset where Match Replay comes this close. Veterans returning want both competition and content catch-up in equal measure.</div>
+      <div class="insight">SP conv grows steadily from 0.86% (D0) to 3.34% (D14) and is still climbing. The curve hasn't plateaued — there's meaningful SP conversion still to come past the D14 window.</div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 2: PAYER SPLIT ── -->
+  <div class="section">
+    <div class="section-header">
+      <p class="section-num">02 — Split by prior payment history</p>
+      <p class="section-title">Was a Payer vs Was Not a Payer</p>
+      <p class="section-sub">63.7% of Q90 users never paid before. The 36.3% who did drive 91% of Q90 revenue.</p>
+    </div>
+
+    <div class="three-col" style="margin-bottom:1.25rem;">
+      <div class="card">
+        <p class="card-title">User split</p>
+        <div class="chart-wrap" style="height:190px"><canvas id="c_split_donut"></canvas></div>
+        <div class="legend" style="margin-top:10px;margin-bottom:0;justify-content:center;">
+          <span class="leg"><span class="leg-sq" style="background:#185FA5"></span>Was a Payer (36.3%)</span>
+          <span class="leg"><span class="leg-sq" style="background:#b5d4f4"></span>Not a Payer (63.7%)</span>
+        </div>
+      </div>
+      <div class="card">
+        <p class="card-title">D14 revenue split</p>
+        <div class="chart-wrap" style="height:190px"><canvas id="c_split_rev"></canvas></div>
+        <div class="legend" style="margin-top:10px;margin-bottom:0;justify-content:center;">
+          <span class="leg"><span class="leg-sq" style="background:#185FA5"></span>Was a Payer (91%)</span>
+          <span class="leg"><span class="leg-sq" style="background:#b5d4f4"></span>Not a Payer (9%)</span>
+        </div>
+      </div>
+      <div class="card">
+        <p class="card-title">D14 retention — nearly identical</p>
+        <div class="chart-wrap" style="height:190px"><canvas id="c_split_ret"></canvas></div>
+      </div>
+    </div>
+
+    <div class="two-col" style="margin-bottom:1.25rem;">
+      <div class="card">
+        <p class="card-title">Key metrics at D14</p>
+        <table class="sp-table">
+          <thead><tr><th>Metric</th><th>Not a Payer</th><th>Was a Payer</th><th>Ratio</th></tr></thead>
+          <tbody>
+            <tr><td>D14 Conv%</td><td>6.2%</td><td>18.4%</td><td style="color:var(--teal);font-weight:500;">3×</td></tr>
+            <tr><td>ARPU D14</td><td>₹11.3</td><td>₹200.6</td><td style="color:var(--teal);font-weight:500;">17×</td></tr>
+            <tr><td>ARPPU D14</td><td>₹181</td><td>₹1,092</td><td style="color:var(--teal);font-weight:500;">6×</td></tr>
+            <tr><td>SP Conv D14</td><td>0.99%</td><td>7.46%</td><td style="color:var(--teal);font-weight:500;">7.5×</td></tr>
+            <tr><td>D14 Retention</td><td>41.9%</td><td>42.0%</td><td style="color:var(--text-tertiary);">≈ same</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <p class="card-title">SP conversion curve — Was a Payer vs Not</p>
+        <div class="legend">
+          <span class="leg"><span class="leg-sq" style="background:#185FA5"></span>Was a Payer</span>
+          <span class="leg"><span class="leg-sq" style="background:#b5d4f4"></span>Was Not a Payer</span>
+        </div>
+        <div class="chart-wrap" style="height:180px"><canvas id="c_split_sp"></canvas></div>
+      </div>
+    </div>
+
+    <div class="two-col" style="margin-bottom:1.25rem;">
+      <div class="card" style="padding:1.2rem 1.4rem;">
+        <p class="card-title">Was Not a Payer — top offers <span class="tag tag-blue">FTB SP</span></p>
+        <table class="offer-table">
+          <thead><tr><th>Rank</th><th>Offer</th><th>FTB %</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rank-badge">1</span></td><td>Rent a Player</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:100%"></div></div>49.7%</td></tr>
+            <tr><td><span class="rank-badge">2</span></td><td>Match Replay</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:53%"></div></div>26.5%</td></tr>
+            <tr><td><span class="rank-badge">3</span></td><td>M2+ FTB SP</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:25%"></div></div>12.2%</td></tr>
+            <tr><td><span class="rank-badge">4</span></td><td>WOD</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:13%"></div></div>6.7%</td></tr>
+            <tr><td><span class="rank-badge">5</span></td><td>Fast Mode Offer</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:2%"></div></div>1.2%</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;">SP D0 conv: 0.27% → D14: <strong>0.99%</strong>. Slow ramp — non-payers need re-engagement before FTB SP lands.</p>
+      </div>
+      <div class="card" style="padding:1.2rem 1.4rem;">
+        <p class="card-title">Was a Payer — top offers <span class="tag tag-amber">Irregular SP</span> <span class="tag tag-green">Regular SP</span></p>
+        <table class="offer-table">
+          <thead><tr><th>Rank</th><th>Offer</th><th>FTB %</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rank-badge">1</span></td><td>Match Replay <span class="tag tag-amber">flips to #1</span></td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:100%"></div></div>34.4%</td></tr>
+            <tr><td><span class="rank-badge">2</span></td><td>Rent a Player</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:70%"></div></div>24.1%</td></tr>
+            <tr><td><span class="rank-badge">3</span></td><td>M2+ SP</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:32%"></div></div>10.9%</td></tr>
+            <tr><td><span class="rank-badge">4</span></td><td>M2+ FTB SP</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:19%"></div></div>6.7%</td></tr>
+            <tr><td><span class="rank-badge">5</span></td><td>M2+ Irregular SP Gold</td><td><div class="pct-bar-bg"><div class="pct-bar" style="width:19%"></div></div>6.5%</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;">SP D0 conv: 1.90% → D14: <strong>7.46%</strong>. Already buying on day zero — habitual behaviour, not offer-driven.</p>
+      </div>
+    </div>
+
+    <div class="insights">
+      <div class="insight warn"><strong>D14 retention is virtually identical (41.9% vs 42.0%).</strong> Prior payment history has zero effect on whether a Q90 user sticks around after reactivation. The only variable it moves is monetisation.</div>
+      <div class="insight good"><strong>Was a Payer: SP conv is 1.9% on D0</strong> — before any engagement has happened. That's habitual behaviour. These users are coming back with intent to subscribe, not responding to in-game nudges.</div>
+      <div class="insight"><strong>The SP conv gap widens every single day</strong> — the two curves are diverging, not converging. By D14 the gap is 6.5pp and still opening. Was Not a Payer is unlikely to catch up even at D30.</div>
+      <div class="insight warn"><strong>Was Not a Payer: FTB SP gets 0.99% out of deeply progressed non-payers (median MRP 32).</strong> These users have already played enough to reach level 32 without ever paying — the offer is reaching the right people, but the segment's propensity is inherently low.</div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 3: PREV LTV ── -->
+  <div class="section">
+    <div class="section-header">
+      <p class="section-num">03 — Prior payers split by previous LTV</p>
+      <p class="section-title">Previous spend is the strongest predictor of return value</p>
+      <p class="section-sub">Among the 3,004 Q90 users who were previously payers, broken by total pre-reactivation lifetime spend.</p>
+    </div>
+
+    <!-- user + rev share -->
+    <div class="two-col" style="margin-bottom:1.25rem;">
+      <div class="card">
+        <p class="card-title">Users vs revenue share by tier</p>
+        <div class="legend">
+          <span class="leg"><span class="leg-sq" style="background:#85B7EB"></span>User share %</span>
+          <span class="leg"><span class="leg-sq" style="background:#185FA5"></span>Revenue share %</span>
+        </div>
+        <div class="chart-wrap" style="height:230px"><canvas id="c_ltv_shares"></canvas></div>
+      </div>
+      <div class="card">
+        <p class="card-title">MRP level at reactivation by tier (median)</p>
+        <div class="chart-wrap" style="height:230px"><canvas id="c_ltv_mrp"></canvas></div>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:8px;">Higher previous spenders were deeper in the game when they churned — median MRP scales directly with prior LTV.</p>
+      </div>
+    </div>
+
+    <!-- ARPU + retention -->
+    <div class="two-col" style="margin-bottom:1.25rem;">
+      <div class="card">
+        <p class="card-title">ARPU D14 by tier (₹)</p>
+        <div class="chart-wrap" style="height:220px"><canvas id="c_ltv_arpu"></canvas></div>
+      </div>
+      <div class="card">
+        <p class="card-title">D14 retention % and SP conv % D14</p>
+        <div class="legend">
+          <span class="leg"><span class="leg-sq" style="background:#85B7EB"></span>D14 Retention %</span>
+          <span class="leg"><span class="leg-sq" style="background:var(--coral)"></span>SP Conv % D14</span>
+        </div>
+        <div class="chart-wrap" style="height:200px"><canvas id="c_ltv_ret_sp"></canvas></div>
+      </div>
+    </div>
+
+    <!-- SP conv curves -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <p class="card-title">SP conversion D0 → D14 by previous LTV tier</p>
+      <div class="legend">
+        <span class="leg"><span class="leg-sq" style="background:#d4e9fa"></span>&lt;$1 <span style="font-size:10px;color:var(--text-tertiary);margin-left:2px;">Irregular SP</span></span>
+        <span class="leg"><span class="leg-sq" style="background:#85B7EB"></span>$1–$25 <span style="font-size:10px;color:var(--text-tertiary);margin-left:2px;">Irregular SP</span></span>
+        <span class="leg"><span class="leg-sq" style="background:#5499d9"></span>$26–$50 <span style="font-size:10px;color:var(--text-tertiary);margin-left:2px;">Irregular SP</span></span>
+        <span class="leg"><span class="leg-sq" style="background:#185FA5"></span>$51–$100 <span style="font-size:10px;color:var(--text-tertiary);margin-left:2px;">Regular SP</span></span>
+        <span class="leg"><span class="leg-sq" style="background:#0e3d6e"></span>&gt;$100 <span style="font-size:10px;color:var(--text-tertiary);margin-left:2px;">Regular SP</span></span>
+      </div>
+      <div class="chart-wrap" style="height:260px"><canvas id="c_ltv_sp_curve"></canvas></div>
+    </div>
+
+    <!-- SP table -->
+    <div class="card" style="margin-bottom:1.25rem;padding:1.2rem 1.5rem;">
+      <p class="card-title">SP conversion progression D0 → D14</p>
+      <table class="sp-table">
+        <thead>
+          <tr>
+            <th>Tier</th><th>SP Type</th>
+            <th>D0</th><th>D1</th><th>D3</th><th>D7</th><th>D14</th>
+            <th>D0→D14 gain</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>&lt;$1</td><td><span class="tag tag-amber">Irregular SP</span></td><td>0.30%</td><td>0.72%</td><td>1.02%</td><td>1.62%</td><td>2.04%</td><td style="color:var(--teal);">+1.74pp</td></tr>
+          <tr><td>$1–$25</td><td><span class="tag tag-amber">Irregular SP</span></td><td>2.56%</td><td>4.43%</td><td>5.83%</td><td>8.74%</td><td>11.19%</td><td style="color:var(--teal);">+8.63pp</td></tr>
+          <tr><td>$26–$50</td><td><span class="tag tag-amber">Irregular SP</span></td><td>2.59%</td><td>4.66%</td><td>6.74%</td><td>12.44%</td><td>16.06%</td><td style="color:var(--teal);">+13.47pp</td></tr>
+          <tr><td>$51–$100</td><td><span class="tag tag-green">Regular SP</span></td><td>8.28%</td><td>10.34%</td><td>11.72%</td><td>15.17%</td><td>18.62%</td><td style="color:var(--teal);">+10.34pp</td></tr>
+          <tr><td>&gt;$100</td><td><span class="tag tag-green">Regular SP</span></td><td>9.29%</td><td>15.71%</td><td>20.71%</td><td>22.14%</td><td>25.71%</td><td style="color:var(--teal);">+16.43pp</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- offers table -->
+    <div class="card" style="margin-bottom:1.25rem;padding:1.2rem 1.5rem;">
+      <p class="card-title">Top converting offers by previous LTV tier — offer preference tracks spend</p>
+      <table class="offer-table">
+        <thead><tr><th>Tier</th><th>Users</th><th>Rev share</th><th>#1 Offer</th><th>#2 Offer</th><th>#3 Offer</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>&lt;$1</td><td>1,668</td><td>5.3%</td>
+            <td>Rent a Player (48.4%)</td>
+            <td>Match Replay (41.1%)</td>
+            <td>M2+ FTB SP (5.8%)</td>
+          </tr>
+          <tr>
+            <td>$1–$25</td><td>858</td><td>17.1%</td>
+            <td>Match Replay (43.3%)</td>
+            <td>M2+ FTB SP (11.8%)</td>
+            <td>M2+ Irregular SP (11.8%)</td>
+          </tr>
+          <tr>
+            <td>$26–$50</td><td>193</td><td>8.1%</td>
+            <td>M2+ Irregular SP Gold (58.1%)</td>
+            <td>M2+ SP (19.4%)</td>
+            <td>M2+ SP Gold (12.9%)</td>
+          </tr>
+          <tr>
+            <td>$51–$100</td><td>145</td><td><strong>44.4%</strong></td>
+            <td>M2+ SP (66.7%)</td>
+            <td>M2+ SP Gold (20.0%)</td>
+            <td>700 HC Pack (3.3%)</td>
+          </tr>
+          <tr>
+            <td>&gt;$100</td><td>140</td><td>25.0%</td>
+            <td>M2+ SP (57.9%)</td>
+            <td>M2+ SP Gold (36.8%)</td>
+            <td>700 HC Pack (5.3%)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="insights">
+      <div class="insight warn"><strong>$51–$100 tier: 145 users, 44.4% of Q90 payer revenue (₹2.67L).</strong> Most disproportionate tier in the entire dataset. ARPPU of ₹8,919 — surfacing M2+ SP directly to these users at reactivation is the single highest-ROI action.</div>
+      <div class="insight good"><strong>&gt;$100 tier: 50% D14 retention and 25.7% SP conv — both the highest of any tier.</strong> SP D0 is already 9.3%, meaning ~1 in 10 buy a subscription on reactivation day itself. No nudge needed — these users come back with clear intent.</div>
+      <div class="insight"><strong>Irregular SP is most effective in the $1–$25 range (+8.6pp D0→D14).</strong> These users had a real but modest spend habit, lapsed long enough to qualify, and respond meaningfully. The $26–$50 tier shows even steeper growth (+13.5pp) as the top of the Irregular SP ceiling.</div>
+      <div class="insight warn"><strong>&lt;$1 tier: only +1.74pp SP growth across 14 days despite Irregular SP eligibility.</strong> Micro-spenders technically qualify but aren't responding. They converted before at trivially low amounts — subscription propensity is low regardless of what's served. Low investment priority.</div>
+      <div class="insight"><strong>Offer preference maps perfectly to spend tier.</strong> Low spenders → social/utility (Rent a Player, Match Replay). Mid spenders → Match Replay + FTB/Irregular SPs. High spenders → subscription packs (M2+ SP, M2+ SP Gold) without needing any discount. Serving the right offer tier at reactivation is a direct revenue lever.</div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 4: OPPORTUNITIES ── -->
+  <div class="section">
+    <div class="section-header">
+      <p class="section-num">04 — Opportunities</p>
+      <p class="section-title">Where to focus for Q90</p>
+      <p class="section-sub">Actions directly supported by the data above.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="card">
+        <div style="width:32px;height:32px;border-radius:8px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;">🎯</div>
+        <p style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Identify returning payers at install</p>
+        <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;">36.3% of Q90 users are previous payers driving 91% of Q90 revenue. Flagging them at reactivation enables a dedicated flow — different offer, different onboarding. Currently treated identically to non-payers.</p>
+      </div>
+      <div class="card">
+        <div style="width:32px;height:32px;border-radius:8px;background:var(--amber-light);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;">💳</div>
+        <p style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Tier-aware offer surfacing</p>
+        <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;">The $51–$100 tier (145 users) generates ₹2.67L — 44% of Q90 payer revenue. Surfacing M2+ SP immediately to users identified in this tier could meaningfully lift conversion, given their D0 SP intent.</p>
+      </div>
+      <div class="card">
+        <div style="width:32px;height:32px;border-radius:8px;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;">▶️</div>
+        <p style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Match Replay as a payer re-entry hook</p>
+        <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;">Match Replay is the #1 offer for returning payers (34.4%) and #2 for the $1–$25 tier (43.3%). Returning payers want continuity, not a fresh start. A "here's what happened while you were away" moment at reactivation could be a high-conversion entry point.</p>
+      </div>
+      <div class="card">
+        <div style="width:32px;height:32px;border-radius:8px;background:var(--coral-light);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;">📉</div>
+        <p style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Deprioritise &lt;$1 tier for SP investment</p>
+        <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;">&lt;$1 tier is 55.5% of returning payers but only 5.3% of Q90 payer revenue. Irregular SP is available to them but barely moves the needle (+1.74pp D0→D14). Marginal SP investment here has poor returns — effort is better directed at the $1–$50 Irregular SP window.</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Q90 = M7+ accounts with MRP ≥ 15 at reactivation &nbsp;·&nbsp; Apr 1–30 · Adjust attribution &nbsp;·&nbsp;
+  <a href="./reactivated_users_april2026.html">← Main report</a> &nbsp;·&nbsp;
+  <a href="https://docs.google.com/spreadsheets/d/18pALbCgJaCgWXWRdpgwDfCSfi5IwOa9A5XSNG7zJpHY/edit?usp=sharing" target="_blank" rel="noopener">Data sheet ↗</a>
+</footer>
+
+<script>
+const tc = '#5a5a5a', gc = '#e5e5e0';
+const base = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { ticks: { color: tc, font: { size: 11 }, autoSkip: false, maxRotation: 0 }, grid: { color: gc } },
+    y: { ticks: { color: tc, font: { size: 11 } }, grid: { color: gc } }
+  }
+};
+const days = ['D0','D1','D3','D7','D14'];
+const ltvTiers = ['<$1','$1–$25','$26–$50','$51–$100','>$100'];
+
+/* 1. Q90 retention line */
+new Chart(document.getElementById('c_q90ret'), {
+  type: 'line',
+  data: { labels: days, datasets: [{
+    data: [100, 66.3, 50.0, 38.9, 41.9],
+    borderColor: '#D85A30', pointRadius: 5, tension: 0.3, fill: false, borderWidth: 2
+  }]},
+  options: { ...base, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y.toFixed(1)}%` } } },
+    scales: { ...base.scales, y: { ...base.scales.y, min: 30, max: 105, ticks: { ...base.scales.y.ticks, callback: v => v + '%' } } } }
+});
+
+/* 2. Q90 monetization dual axis */
+new Chart(document.getElementById('c_q90mono'), {
+  type: 'bar',
+  data: { labels: days, datasets: [
+    { label: 'Revenue', data: [95127, 173097, 249428, 437976, 662197], backgroundColor: '#85B7EB', borderRadius: 4, yAxisID: 'y' },
+    { label: 'PUC%', data: [2.99, 4.64, 6.48, 8.84, 10.64], type: 'line', borderColor: '#D85A30', pointRadius: 4, tension: 0.3, fill: false, yAxisID: 'y2' }
+  ]},
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === 'PUC%' ? ` PUC: ${ctx.parsed.y.toFixed(2)}%` : ` ₹${ctx.parsed.y.toLocaleString()}` } } },
+    scales: {
+      x: { ticks: { color: tc, font: { size: 11 } }, grid: { color: gc } },
+      y: { position: 'left', ticks: { color: tc, font: { size: 11 }, callback: v => v >= 100000 ? '₹' + (v/100000).toFixed(1) + 'L' : '₹' + (v/1000).toFixed(0) + 'k' }, grid: { color: gc } },
+      y2: { position: 'right', min: 0, max: 15, ticks: { color: '#D85A30', font: { size: 11 }, callback: v => v + '%' }, grid: { display: false } }
+    }
+  }
+});
+
+/* 3. Q90 SP conv */
+new Chart(document.getElementById('c_q90sp'), {
+  type: 'line',
+  data: { labels: days, datasets: [{
+    data: [0.86, 1.38, 1.81, 2.59, 3.34],
+    borderColor: '#185FA5', backgroundColor: 'rgba(24,95,165,0.08)', pointRadius: 5, tension: 0.3, fill: true
+  }]},
+  options: { ...base, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y.toFixed(2)}%` } } },
+    scales: { ...base.scales, y: { ...base.scales.y, ticks: { ...base.scales.y.ticks, callback: v => v + '%' } } } }
+});
+
+/* 4. Payer split donut */
+new Chart(document.getElementById('c_split_donut'), {
+  type: 'doughnut',
+  data: { labels: ['Was a Payer', 'Was Not a Payer'],
+    datasets: [{ data: [36.3, 63.7], backgroundColor: ['#185FA5', '#b5d4f4'], borderWidth: 1, borderColor: '#fff' }] },
+  options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(1)}%` } } } }
+});
+
+/* 5. Revenue split donut */
+new Chart(document.getElementById('c_split_rev'), {
+  type: 'doughnut',
+  data: { labels: ['Was a Payer', 'Was Not a Payer'],
+    datasets: [{ data: [91.0, 9.0], backgroundColor: ['#185FA5', '#b5d4f4'], borderWidth: 1, borderColor: '#fff' }] },
+  options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(1)}%` } } } }
+});
+
+/* 6. Retention split bar */
+new Chart(document.getElementById('c_split_ret'), {
+  type: 'bar',
+  data: { labels: ['Was Not a Payer', 'Was a Payer'],
+    datasets: [{ data: [41.9, 42.0], backgroundColor: ['#b5d4f4', '#185FA5'], borderRadius: 6 }] },
+  options: { ...base, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y.toFixed(1)}%` } } },
+    scales: { ...base.scales, y: { ...base.scales.y, min: 38, max: 46, ticks: { ...base.scales.y.ticks, callback: v => v + '%' } } } }
+});
+
+/* 7. SP conv split line */
+new Chart(document.getElementById('c_split_sp'), {
+  type: 'line',
+  data: { labels: days, datasets: [
+    { label: 'Was a Payer', data: [1.90, 3.20, 4.19, 5.96, 7.46], borderColor: '#185FA5', pointRadius: 4, tension: 0.3, fill: false, borderWidth: 2 },
+    { label: 'Was Not a Payer', data: [0.27, 0.34, 0.46, 0.67, 0.99], borderColor: '#b5d4f4', pointRadius: 4, tension: 0.3, fill: false, borderWidth: 2 }
+  ]},
+  options: { ...base, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}%` } } },
+    scales: { ...base.scales, y: { ...base.scales.y, ticks: { ...base.scales.y.ticks, callback: v => v + '%' } } } }
+});
+
+/* 8. LTV user vs rev share */
+new Chart(document.getElementById('c_ltv_shares'), {
+  type: 'bar',
+  data: { labels: ltvTiers, datasets: [
+    { label: 'User share %', data: [55.5, 28.6, 6.4, 4.8, 4.7], backgroundColor: '#85B7EB', borderRadius: 4 },
+    { label: 'Revenue share %', data: [5.3, 17.1, 8.1, 44.4, 25.0], backgroundColor: '#185FA5', borderRadius: 4 }
+  ]},
+  options: { ...base, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` } } },
+    scales: { ...base.scales, y: { ...base.scales.y, ticks: { ...base.scales.y.ticks, callback: v => v + '%' } } } }
+});
+
+/* 9. LTV MRP median */
+new Chart(document.getElementById('c_ltv_mrp'), {
+  type: 'bar',
+  data: { labels: ltvTiers, datasets: [{
+    data: [35, 46, 53, 58, 71],
+    backgroundColor: ['#d4e9fa', '#85B7EB', '#5499d9', '#185FA5', '#0e3d6e'], borderRadius: 4
+  }]},
+  options: { ...base, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` Level ${ctx.parsed.y}` } } },
+    scales: { ...base.scales, y: { ...base.scales.y, title: { display: true, text: 'Median MRP', color: tc, font: { size: 11 } } } } }
+});
+
+/* 10. LTV ARPU */
+new Chart(document.getElementById('c_ltv_arpu'), {
+  type: 'bar',
+  data: { labels: ltvTiers, datasets: [{
+    data: [19.2, 120.4, 254.2, 1845.3, 1077.4],
+    backgroundColor: ['#d4e9fa', '#85B7EB', '#5499d9', '#185FA5', '#0e3d6e'], borderRadius: 4
+  }]},
+  options: { ...base, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ₹${ctx.parsed.y.toFixed(1)}` } } },
+    scales: { ...base.scales, y: { ...base.scales.y, ticks: { ...base.scales.y.ticks, callback: v => '₹' + v } } } }
+});
+
+/* 11. LTV retention + SP conv grouped */
+new Chart(document.getElementById('c_ltv_ret_sp'), {
+  type: 'bar',
+  data: { labels: ltvTiers, datasets: [
+    { label: 'D14 Retention %', data: [41.5, 42.4, 36.8, 44.8, 50.0], backgroundColor: '#85B7EB', borderRadius: 4 },
+    { label: 'SP Conv % D14',   data: [2.0, 11.2, 16.1, 18.6, 25.7],  backgroundColor: '#D85A30', borderRadius: 4 }
+  ]},
+  options: { ...base, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` } } },
+    scales: { ...base.scales, y: { ...base.scales.y, max: 60, ticks: { ...base.scales.y.ticks, callback: v => v + '%' } } } }
+});
+
+/* 12. SP conv curves by LTV tier */
+new Chart(document.getElementById('c_ltv_sp_curve'), {
+  type: 'line',
+  data: { labels: days, datasets: [
+    { label: '<$1',      data: [0.30, 0.72, 1.02, 1.62, 2.04], borderColor: '#d4e9fa', pointRadius: 4, tension: 0.3, fill: false, borderWidth: 2 },
+    { label: '$1–$25',   data: [2.56, 4.43, 5.83, 8.74, 11.19], borderColor: '#85B7EB', pointRadius: 4, tension: 0.3, fill: false, borderWidth: 2 },
+    { label: '$26–$50',  data: [2.59, 4.66, 6.74, 12.44, 16.06], borderColor: '#5499d9', pointRadius: 4, tension: 0.3, fill: false, borderWidth: 2 },
+    { label: '$51–$100', data: [8.28, 10.34, 11.72, 15.17, 18.62], borderColor: '#185FA5', pointRadius: 4, tension: 0.3, fill: false, borderWidth: 2.5 },
+    { label: '>$100',    data: [9.29, 15.71, 20.71, 22.14, 25.71], borderColor: '#0e3d6e', pointRadius: 4, tension: 0.3, fill: false, borderWidth: 2.5 }
+  ]},
+  options: { ...base, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}%` } } },
+    scales: { ...base.scales, y: { ...base.scales.y, ticks: { ...base.scales.y.ticks, callback: v => v + '%' } } } }
+});
+</script>
+</body>
+</html>
